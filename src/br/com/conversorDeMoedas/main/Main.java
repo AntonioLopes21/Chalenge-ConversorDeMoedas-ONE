@@ -1,5 +1,7 @@
 package br.com.conversorDeMoedas.main;
 
+import br.com.conversorDeMoedas.models.DadosColetados;
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -23,23 +25,33 @@ public class Main {
 
             //início do programa
             do {
-                String url_personalizada = "https://v6.exchangerate-api.com/v6/" + chaveApi + "latest/" + resposta;
+                String url_personalizada = "https://v6.exchangerate-api.com/v6/" + chaveApi + "/latest/" + resposta;
                     // Making Request
                     URL url = new URL(url_personalizada);
                     HttpURLConnection request = (HttpURLConnection) url.openConnection();
                     request.connect();
 
                     // Convert to JSON
-                    JsonParser jp = new JsonParser();
-                    JsonElement root = jp.parse(new InputStreamReader((InputStream) request.getContent()));
-                    JsonObject jsonobj = root.getAsJsonObject();
+                Gson gson = new Gson();
+                DadosColetados dados = gson.fromJson(new InputStreamReader(request.getInputStream()), DadosColetados.class);
+                Double taxaConversao = dados.conversion_rates().get(resposta);
 
-                    // Accessing object
-                    String req_result = jsonobj.get("result").getAsString();System.out.println("Digite um código da moeda. Exemplo = ( USD para dólar)  ");
-                resposta = scan.nextLine();
+                // Exibindo o valor da conversão
+                if (taxaConversao != null) {
+                    System.out.println("1 " + dados.base_code() + " equivale a " + taxaConversao + " " + resposta);
+                } else {
+                    System.out.println("A moeda " + resposta + " não foi encontrada.");
+                }
+
+                String dadosConvertidos = gson.toJson(dados);
+
+                System.out.println("Digite um código da moeda. Exemplo = ( USD para dólar)  ");
+                resposta = scan.nextLine().toUpperCase();
+
+
 
                 FileWriter file = new FileWriter("MoedasRequisitadas.txt");
-                file.write(req_result);
+                file.write(dadosConvertidos);
                 file.close();
 
             } while (!resposta.equalsIgnoreCase("sair"));
