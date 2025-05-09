@@ -2,67 +2,113 @@ package br.com.conversorDeMoedas.main;
 
 import br.com.conversorDeMoedas.models.DadosColetados;
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.*;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.Scanner;
 
 public class Main {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         Scanner scan = new Scanner(System.in);
-        String resposta = "USD";
-        try {
-            // Setting URL
-            String chaveApi = "e37e255ffe5b060d354da314";
+        String chaveApi = "e37e255ffe5b060d354da314";
+        Gson gson = new Gson();
+        HttpClient client = HttpClient.newHttpClient();
 
+        // Menu
+        while (true) {
+            System.out.println("*******************************************");
+            System.out.println("Seja bem-vindo/a ao Conversor de Moeda <3");
+            System.out.println("1 - Dólar >> Peso Argentino");
+            System.out.println("2 - Peso Argentino >> Dólar");
+            System.out.println("3 - Real Brasileiro >> Dólar");
+            System.out.println("4 - Dólar >> YEN");
+            System.out.println("5 - YEN >> Dólar");
+            System.out.println("6 - Real Brasileiro >> YEN");
+            System.out.println("7 - Sair");
+            System.out.println("*******************************************");
+            System.out.print("Escolha uma opção: ");
 
+            int opcao = scan.nextInt();
+            scan.nextLine(); // Limpar o buffer
 
+            if (opcao == 7) {
+                System.out.println("Saindo...");
+                break;
+            }
 
-            //início do programa
-            do {
-                String url_personalizada = "https://v6.exchangerate-api.com/v6/" + chaveApi + "/latest/" + resposta;
-                    // Making Request
-                    URL url = new URL(url_personalizada);
-                    HttpURLConnection request = (HttpURLConnection) url.openConnection();
-                    request.connect();
+            String moedaBase = "";
+            String moedaDestino = "";
+            String url = "";
 
-                    // Convert to JSON
-                Gson gson = new Gson();
-                DadosColetados dados = gson.fromJson(new InputStreamReader(request.getInputStream()), DadosColetados.class);
-                Double taxaConversao = dados.conversion_rates().get(resposta);
+            switch (opcao) {
+                case 1:
+                    moedaBase = "USD";
+                    moedaDestino = "ARS";
+                    break;
+                case 2:
+                    moedaBase = "ARS";
+                    moedaDestino = "USD";
+                    break;
+                case 3:
+                    moedaBase = "BRL";
+                    moedaDestino = "USD";
+                    break;
+                case 4:
+                    moedaBase = "USD";
+                    moedaDestino = "JPY";
+                    break;
+                case 5:
+                    moedaBase = "JPY";
+                    moedaDestino = "USD";
+                    break;
+                case 6:
+                    moedaBase = "BRL";
+                    moedaDestino = "JPY";
+                    break;
+                default:
+                    System.out.println("Opção inválida!");
+                    continue;
+            }
 
-                // Exibindo o valor da conversão
-                if (taxaConversao != null) {
-                    System.out.println("1 " + dados.base_code() + " equivale a " + taxaConversao + " " + resposta);
-                } else {
-                    System.out.println("A moeda " + resposta + " não foi encontrada.");
-                }
+            url = "https://v6.exchangerate-api.com/v6/" + chaveApi + "/latest/" + moedaBase;
 
-                String dadosConvertidos = gson.toJson(dados);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .GET()
+                    .build();
 
-                System.out.println("Digite um código da moeda. Exemplo = ( USD para dólar)  ");
-                resposta = scan.nextLine().toUpperCase();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
+            if (response.statusCode() != 200) {
+                System.out.println("Erro na requisição: " + response.statusCode());
+                break;
+            }
 
+            DadosColetados dados = gson.fromJson(response.body(), DadosColetados.class);
+            JsonObject jsonObject = JsonParser.parseString(response.body()).getAsJsonObject();
+            JsonObject conversionRates = jsonObject.getAsJsonObject("conversion_rates");
 
-                FileWriter file = new FileWriter("MoedasRequisitadas.txt");
-                file.write(dadosConvertidos);
-                file.close();
+            double taxaDeConversao = conversionRates.get(moedaDestino).getAsDouble();
 
-            } while (!resposta.equalsIgnoreCase("sair"));
+            System.out.println("Digite o valor a ser convertido: ");
+            double valorParaConverter = scan.nextDouble();
+            scan.nextLine();
 
+            double valorConvertido = valorParaConverter * taxaDeConversao;
 
-        } catch (
-                FileNotFoundException e) {
-            System.out.println("Arquivo não encontrado:" + e.getMessage());
+            System.out.println(valorParaConverter + " " + moedaBase + " equivale a " +
+                    valorConvertido + " " + moedaDestino);
 
+            try (FileWriter file = new FileWriter("MoedasRequisitadas.txt", true)) {
+                file.write(response.body() + "\n");
+            }
         }
 
-    scan.close();
+        scan.close();
     }
 }

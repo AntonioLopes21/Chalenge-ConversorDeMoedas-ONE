@@ -1,16 +1,9 @@
 package br.com.conversorDeMoedas.models;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.*;
 
+
+//utilizar no refatoramento do desafio...
 public class Conversor {
     private Double moedaParaConverter;
     private Double moedaConvertida;
@@ -42,12 +35,25 @@ public class Conversor {
 
 
 
-
     }
 
     //https://v6.exchangerate-api.com/v6/YOUR-API-KEY/pair/USD/BRL/1
     //modelo de conversão direta
     public void exibirMenu() {
-        System.out.println();
+
+        System.out.println("*******************************************");
+        System.out.println("Seja bem-vindo/a ao Conversor de Moeda <3");
+        System.out.println("1 - Dólar >> Peso Argentino");
+        System.out.println("2 - Peso Argentino >> Dólar");
+        System.out.println("3 - Real Brasileiro >> Dólar");
+        System.out.println("4 - Dólar >> YEN");
+        System.out.println("5 - YEN >> Dólar");
+        System.out.println("6 - Real Brasileiro >> YEN");
+        System.out.println("*******************************************");
+
+    }
+
+    public void dolarConvertidoReal () {
+
     }
 }
